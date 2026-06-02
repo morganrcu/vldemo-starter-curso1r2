@@ -1,0 +1,17 @@
+# Pipeline reproducible TRIVIAL del starter del tutorial.
+# Una sola stage: ejecuta `make_metrics.py`, que escribe `metrics.json` segun
+# `params.yaml:seed`. No hay dataset ni modelo: es el reproducer minimo que permite
+# que el motor MIDA el control de equidad sin GPU/datos (ver make_metrics.py).
+#
+# `params: [seed]` engancha el hiperparametro: bumpear `seed` en params.yaml marca la
+# stage como stale -> `dvc repro` la re-ejecuta -> metricas frescas (arco V1 rojo -> V2 verde).
+stages:
+  measure:
+    cmd: .venv/bin/python make_metrics.py
+    deps:
+      - make_metrics.py
+    params:
+      - seed
+    metrics:
+      - metrics.json:
+          cache: false   # se queda en el workspace y se versiona en git (evidencia)

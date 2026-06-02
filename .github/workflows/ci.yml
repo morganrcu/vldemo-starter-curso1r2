@@ -1,0 +1,65 @@
+name: arco rojo→verde
+
+# Valida que el arco del tutorial funciona con el `venth` publicado:
+#   FASE ROJA  (seed=1) → el control de equidad falla → `venth run` sale != 0.
+#   TRATAMIENTO         → bump seed 1→2 + commit (git cierra el bucle, ISO 23894 §6.5).
+#   FASE VERDE (seed=2) → el control pasa → `venth run` sale 0.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  arco:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala venth
+        run: |
+          # El instalador del bucket toma el origen de SEI_INSTALL_BASE; se la pasamos al
+          # shell del script (un `| sh` pelado caeria al canal por defecto, que aun no resuelve).
+          curl -fsSL https://sei-releases.s3.fr-par.scw.cloud/latest/install.sh \
+            | SEI_INSTALL_BASE=https://sei-releases.s3.fr-par.scw.cloud sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: venth --version
+        run: venth --version
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Prepara el entorno
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          .venv/bin/pip install --quiet -r requirements.txt
+          git config user.email "ci@example.invalid"
+          git config user.name "ci"
+
+      - name: FASE ROJA — el control de equidad falla (gate rojo, exit != 0)
+        run: |
+          .venv/bin/dvc repro
+          venth compile
+          if venth run; then
+            echo "::error::venth run salio 0 con V1 (seed=1); se esperaba gate ROJO"
+            exit 1
+          fi
+          echo "Gate ROJO confirmado (venth run salio != 0, esperado)."
+          git add dvc.lock .venth/bundle.json .venth/bundle.json.sig
+          git commit -m "T0: evidencia V1 (gate ROJO anclado)"
+
+      - name: TRATAMIENTO + FASE VERDE — el control pasa (gate verde, exit 0)
+        run: |
+          sed -i 's/seed: 1/seed: 2/' params.yaml
+          .venv/bin/dvc repro
+          venth run   # exige exit 0
+          echo "Gate VERDE confirmado (venth run salio 0)."
+          git add params.yaml dvc.lock .venth/bundle.json .venth/bundle.json.sig
+          git commit -m "treat: bump seed 1->2 para cerrar el control de equidad"
+
+      - name: Ciclo de vida ISO 23894 (reconstruido de git)
+        run: venth reconstruct

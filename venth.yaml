@@ -1,0 +1,160 @@
+apiVersion: venturalitica.ai/v1alpha1
+kind: AISystem
+
+# ── Sistema de gobernanza del STARTER del tutorial (material de demostracion). ────────
+# Clasificador de credito minimo con UN control de equidad medido que falla en V1 (gate
+# ROJO) y se trata en V2 (gate VERDE). El unico mecanismo de medicion es un reproducer DVC
+# trivial (make_metrics.py escribe metrics.json fijo segun `params.yaml:seed`), suficiente
+# para que el motor MIDA el control y derive el ciclo de vida (sin GPU ni datos reales).
+# OPSEC: entidad ficticia ("Example Tutorial Corp"); SIN datos reales.
+
+# ── 1. Identidad y finalidad del sistema ─────────────────────────────────────
+system:
+  name: tutorial-credit-approval
+  intended_purpose: "Scoring crediticio automatizado para la aprobacion de prestamos al consumo (sistema de ejemplo del tutorial)."
+  organization: Example Tutorial Corp
+  version: "1.0.0"
+  decisions: [loan_approval, loan_denial]
+  affected_persons: [solicitantes]
+  component_type: ai-model
+
+# ── 2. Naturaleza de la tarea ────────────────────────────────────────────────
+task:
+  modality: tabular
+  type: classification
+
+# ── 3. Marco regulatorio ─────────────────────────────────────────────────────
+# Scoring crediticio automatizado para aprobacion de prestamos al consumo: alto riesgo
+# (EU AI Act Anexo III §5(b)).
+context:
+  applicable_standards:
+    - eu/pren-18228@2026
+    - iso/23894@2023
+    - eu/ai-act@2024
+
+# ── 4. Datos y modelo ────────────────────────────────────────────────────────
+# Sin dataset real: el reproducer trivial no carga datos. `artifacts.model` declara el
+# descriptor del modelo (necesario para que el motor materialice una fase de medicion
+# y `venth run` mida el control con un `risk_id` -> habilita `venth reconstruct`).
+artifacts:
+  model: { kind: logreg, seed: 1 }
+
+# ── 5. Medicion y reproduccion ───────────────────────────────────────────────
+# Reproducer DVC trivial: `make_metrics.py` escribe `metrics.json` (clave = `id` de la
+# medida) segun `params.yaml:seed`. `eval.script` ancla el digest del recomputo en
+# `venth.lock`: como el motor compone el digest con el contenido de `params.yaml`, bumpear
+# `seed` mueve la staleness del modelo y `venth run` re-mide en V2 (arco V1 rojo -> V2 verde).
+eval: { script: make_metrics.py }
+pipeline: { tool: dvc, metrics: metrics.json, params: params.yaml }
+# `venth compile` GENERA este fichero (el plan OSCAL). El alumno lo genera al recorrer el
+# tutorial; el starter solo declara su destino (esta IGNORADO en .gitignore).
+oscal: { assessment_plan: shared_data/policies/assessment_plan.oscal.yaml }
+
+# ── 6. Programa de riesgos (Art.9) ───────────────────────────────────────────
+# El registro declara los CUATRO riesgos que el evaluador del sistema (KAG) propone para
+# un sistema tabular de credito: uno MEDIDO y gateado (el control de equidad rojo->verde)
+# y tres declarados/audit (no afectan al gate). Asi el registro queda "al dia" y el motor
+# no senala riesgos pendientes.
+risk:
+  appetite: { individual: MEDIUM, society: MEDIUM, organization: HIGH }
+  criteria: { scale: "5x5" }
+  overall_residual_criterion: HIGH   # prEN 18228 cl. 10: criterio del residual GLOBAL
+  review_interval: P6M   # revision semestral (ISO 23894 §6.6)
+  risks:
+    # ── RSK — Exclusion crediticia injusta de minorias (el riesgo MEDIDO, gateado) ──
+    - id: risk.unfair-credit-exclusion
+      title: "Unfair Credit Exclusion of Minorities"
+      impact: { individual: HIGH, society: HIGH, organization: HIGH }
+      likelihood: LIKELY
+      treat:
+        - method: REDUCE
+          action: "Acotar la paridad demografica de la decision por grupo protegido."
+          controls: [eu/ai-act@2024#art-15]
+          residual_likelihood: UNLIKELY   # 6.5 objetivo: UNLIKELY x HIGH = MEDIUM (dentro del apetito)
+          measures:
+            # CONTROL MEDIDO bloqueante: V1 (seed=1) = 0.21 ROJO -> V2 (seed=2) = 0.01 VERDE.
+            - id: unfair-credit-exclusion
+              metric: demographic_parity_diff
+              constraint: "< 0.03"
+              severity: high
+              enforcement: gate
+              lifecycle: [validation]
+              article: "15"
+              control_tier: protective
+              # El control de equidad medido es la columna vertebral de la conformidad: cita
+              # las clausulas de gestion, estimacion, evaluacion y verificacion del riesgo en
+              # ambos estandares prioritarios.
+              standard_clauses:
+                - "eu/pren-18228@2026#6.2.1"
+                - "eu/pren-18228@2026#6.3"
+                - "eu/pren-18228@2026#7"
+                - "eu/pren-18228@2026#8.1"
+                - "eu/pren-18228@2026#9.2"
+                - "eu/pren-18228@2026#9.3"
+                - "iso/23894@2023#6.4.2"
+                - "iso/23894@2023#6.4.3"
+                - "iso/23894@2023#6.4.4"
+                - "iso/23894@2023#6.5"
+              inputs: { prediction: prediction, dimension: gender }
+
+    # ── RSK — Datos envenenados por bucles de realimentacion (Art.10) — declarado ──
+    - id: risk.data-governance
+      title: "Poisoned Data from Feedback Loops"
+      impact: { society: HIGH, organization: MEDIUM }
+      likelihood: POSSIBLE
+      treat:
+        - method: REDUCE
+          action: "Balance de clase y minimizacion del dato de entrenamiento."
+          controls: [eu/ai-act@2024#art-10]
+          measures:
+            # Declaracion organizativa (no medida): gobernanza de datos atestiguada.
+            - id: oversight-data-governance
+              metric: oversight_data_governance_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "10"
+              standard_clauses: ["iso/iec-5259-2@2024#balance"]
+
+    # ── RSK — Decisiones automatizadas sin explicabilidad (Art.13/14) — declarado ──
+    - id: risk.opacity
+      title: "Automated Decisions without Explainability"
+      impact: { individual: HIGH }
+      likelihood: ALMOST_CERTAIN
+      treat:
+        - method: REDUCE
+          action: "Supervision humana de la salida del modelo (Art.14)."
+          controls: [eu/ai-act@2024#art-13]
+          measures:
+            - id: oversight-monitor-interpret
+              metric: oversight_monitor_interpret_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "14"
+              standard_clauses: ["eu/pren-18229-1@2026#human-oversight", "iso/42105@2026#guidance"]
+
+    # ── RSK — Discriminacion por edad (riesgo emergente del KAG) — declarado ───────
+    - id: risk.age-discrimination
+      title: "Age-based Credit Discrimination"
+      impact: { individual: HIGH, society: MEDIUM }
+      likelihood: POSSIBLE
+      treat:
+        - method: REDUCE
+          action: "Vigilar la edad como proxy aunque se haya mitigado el sexo (revision por grupo de edad)."
+          controls: [eu/ai-act@2024#art-15]
+          measures:
+            - id: oversight-age-proxy
+              metric: oversight_age_proxy_declared
+              constraint: "> 0"
+              severity: medium
+              enforcement: audit
+              evaluation: manual
+              lifecycle: [monitoring]
+              article: "15"
+              standard_clauses: ["eu/pren-18228@2026#6.3"]
+  applicability: {}

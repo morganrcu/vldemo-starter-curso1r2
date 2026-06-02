@@ -1,0 +1,10 @@
+{
+  "runs": [
+    { "seed": 1, "allowFailure": true, "treatmentBefore": null },
+    { "seed": 2, "allowFailure": false, "treatmentBefore": "ajuste de parametro (seed 1->2; cierra el control medido)" }
+  ],
+  "lifecycle": [
+    { "act": "request", "who": "dev", "monthsAgo": 8 },
+    { "act": "approve", "who": "quality", "monthsAgo": 7 }
+  ]
+}

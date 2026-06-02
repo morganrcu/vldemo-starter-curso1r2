@@ -1,0 +1,13 @@
+# Artefactos REGENERABLES (el alumno los genera con `dvc repro` / `venth compile`;
+# el starter no los pre-commitea). Se reconstruyen de forma determinista.
+metrics.json
+shared_data/policies/assessment_plan.oscal.yaml
+
+# Entorno virtual y cache de Python.
+.venv/
+__pycache__/
+
+# NOTA — que SI se versiona (evidencia, no ignorada):
+#   `.venth/bundle.json(.sig)`  el bundle firmado que `venth run` ancla y `venth reconstruct`
+#                               reproduce por replay de git (el alumno lo commitea: git cierra el bucle).
+#   `dvc.lock`                  DVC se niega a escribir un lock git-ignored y es parte de la evidencia.
