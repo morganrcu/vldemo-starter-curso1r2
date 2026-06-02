@@ -1,5 +1,5 @@
 # Hiperparametro del pipeline reproducible (DVC-native). El motor lo ancla en `dvc.lock`.
-# El tutorial arranca en `seed: 1` (V1, gate ROJO) y lo bumpea a `seed: 2` (V2, gate VERDE)
+# El tutorial arranca en `seed: 2` (V1, gate ROJO) y lo bumpea a `seed: 2` (V2, gate VERDE)
 # como TRATAMIENTO versionado en git (ISO 23894 §6.5). Bumpear la semilla mueve la staleness
 # del modelo -> `venth run` re-mide.
-seed: 1
+seed: 2
