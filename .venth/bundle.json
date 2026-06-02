@@ -1,0 +1,277 @@
+{
+  "system_name": "tutorial-credit-approval",
+  "intended_purpose": "Scoring crediticio automatizado para la aprobacion de prestamos al consumo (sistema de ejemplo del tutorial).",
+  "foreseeable_misuse": [],
+  "assessor": {
+    "name": "Rodrigo Cilla",
+    "email": "rodrigo.cilla@venturalitica.ai",
+    "organization": "Example Tutorial Corp"
+  },
+  "triple": {
+    "code": "ad7d500a5745160243a9d6c17a7d4cdf6b1465a3",
+    "model": "logreg:seed=1",
+    "dataset": ""
+  },
+  "classification": {
+    "tier": "high",
+    "basis": [
+      "EU AI Act Annex III §5(b) (evaluación de solvencia / credit scoring)"
+    ],
+    "rationale": "Scoring crediticio automatizado para aprobación de préstamos al consumo: sistema de IA de alto riesgo (decisiones que afectan al acceso a crédito de personas físicas)."
+  },
+  "risks": [
+    {
+      "id": "risk.unfair-credit-exclusion",
+      "domain": "fairness",
+      "title": "Unfair Credit Exclusion of Minorities",
+      "rationale": "El modelo puede excluir injustamente a grupos protegidos al heredar patrones históricos de discriminación (sexo, edad)."
+    },
+    {
+      "id": "risk.data-governance",
+      "domain": "data",
+      "title": "Poisoned Data from Feedback Loops",
+      "rationale": "Las decisiones sesgadas realimentan el reentrenamiento (profecía autocumplida), degradando la calidad y representatividad del dato."
+    },
+    {
+      "id": "risk.opacity",
+      "domain": "transparency",
+      "title": "Automated Decisions without Explainability",
+      "rationale": "Decisiones automatizadas sin exactitud mínima defendible comprometen la explicabilidad y el derecho a una decisión justa."
+    },
+    {
+      "id": "risk.age-discrimination",
+      "domain": "fairness",
+      "title": "Age-based Credit Discrimination",
+      "rationale": "El KAG detecta que la edad es un proxy fuerte: el modelo puede discriminar por grupo de edad aunque se haya mitigado el sexo. Riesgo EMERGENTE (no en el registro inicial)."
+    }
+  ],
+  "data_governance": null,
+  "measurement": null,
+  "control_results": [
+    {
+      "control_id": "unfair-credit-exclusion",
+      "metric_key": "demographic_parity_diff",
+      "actual_value": 0.01,
+      "threshold": 0.03,
+      "operator": "lt",
+      "severity": "high",
+      "enforcement_mode": "block",
+      "passed": true,
+      "eval_passed": null,
+      "lifecycle_phase": "validation",
+      "risk_id": "risk.unfair-credit-exclusion",
+      "article": "15",
+      "power": {
+        "n": 1000,
+        "ci_low": 0.005,
+        "ci_high": 0.015,
+        "ci_level": 0.95,
+        "method": "bootstrap",
+        "n_boot": 1000,
+        "seed": 2
+      }
+    }
+  ],
+  "treatment_events": [
+    {
+      "control_id": "unfair-credit-exclusion",
+      "risk_id": "risk.unfair-credit-exclusion",
+      "kind": "Treatment",
+      "previous_value": 0.21,
+      "current_value": 0.01,
+      "anchored_commit": "ad7d500a5745160243a9d6c17a7d4cdf6b1465a3",
+      "previous_commit": "5dd699a2dc6cc0982516bc2c37d2b2c8ae4f62cf"
+    }
+  ],
+  "risk_analysis": [
+    {
+      "risk_id": "risk.unfair-credit-exclusion",
+      "kind": "threat",
+      "provenance": "declared",
+      "likelihood": "LIKELY",
+      "residual_declared_likelihood": "UNLIKELY",
+      "dimensions": [
+        {
+          "dimension": "individual",
+          "impact": "HIGH",
+          "appetite": "MEDIUM",
+          "inherent_level": "HIGH",
+          "inherent_eval": "exceeds",
+          "residual_level": "MEDIUM",
+          "residual_eval": "within"
+        },
+        {
+          "dimension": "society",
+          "impact": "HIGH",
+          "appetite": "MEDIUM",
+          "inherent_level": "HIGH",
+          "inherent_eval": "exceeds",
+          "residual_level": "MEDIUM",
+          "residual_eval": "within"
+        },
+        {
+          "dimension": "organization",
+          "impact": "HIGH",
+          "appetite": "HIGH",
+          "inherent_level": "HIGH",
+          "inherent_eval": "within",
+          "residual_level": "MEDIUM",
+          "residual_eval": "within"
+        }
+      ],
+      "inherent_overall": "HIGH",
+      "residual_overall": "MEDIUM",
+      "requires_treatment": true,
+      "control_confirmed": true,
+      "cycle": {
+        "status": "closed"
+      },
+      "priority": 1
+    }
+  ],
+  "overall_residual": {
+    "level": "MEDIUM",
+    "criterion": "HIGH",
+    "evaluation": "within",
+    "contributing": [
+      "risk.unfair-credit-exclusion"
+    ]
+  },
+  "pipeline_lock_digest": "sha256:9b6b08720544452776b115b35047bf32a774a7cb6202fee7cb9acc04bda1c853",
+  "sections": {
+    "classification": "Valid",
+    "measurement": "Valid",
+    "risks": "Valid"
+  },
+  "power_stats": null,
+  "means_of_conformance": [
+    {
+      "article": "9",
+      "status": "gap",
+      "presumption": false,
+      "control_count": 0,
+      "passed_count": 0
+    },
+    {
+      "article": "10",
+      "status": "declared",
+      "sources": [
+        {
+          "id": "iso/iec-5259-2@2024",
+          "authority": "international",
+          "clauses": [
+            "iso/iec-5259-2@2024#balance"
+          ]
+        }
+      ],
+      "highest_authority": "international",
+      "presumption": false,
+      "control_count": 0,
+      "passed_count": 0
+    },
+    {
+      "article": "11",
+      "status": "gap",
+      "presumption": false,
+      "control_count": 0,
+      "passed_count": 0
+    },
+    {
+      "article": "13",
+      "status": "gap",
+      "presumption": false,
+      "control_count": 0,
+      "passed_count": 0
+    },
+    {
+      "article": "14",
+      "status": "declared",
+      "sources": [
+        {
+          "id": "eu/pren-18229-1@2026",
+          "authority": "harmonized_draft",
+          "clauses": [
+            "eu/pren-18229-1@2026#human-oversight"
+          ]
+        },
+        {
+          "id": "iso/42105@2026",
+          "authority": "international",
+          "clauses": [
+            "iso/42105@2026#guidance"
+          ]
+        }
+      ],
+      "highest_authority": "international",
+      "presumption": false,
+      "control_count": 0,
+      "passed_count": 0
+    },
+    {
+      "article": "15",
+      "status": "covered",
+      "sources": [
+        {
+          "id": "eu/pren-18228@2026",
+          "authority": "harmonized_draft",
+          "clauses": [
+            "eu/pren-18228@2026#6.2.1",
+            "eu/pren-18228@2026#6.3",
+            "eu/pren-18228@2026#7",
+            "eu/pren-18228@2026#8.1",
+            "eu/pren-18228@2026#9.2",
+            "eu/pren-18228@2026#9.3",
+            "eu/pren-18228@2026#6.3"
+          ]
+        },
+        {
+          "id": "iso/23894@2023",
+          "authority": "international",
+          "clauses": [
+            "iso/23894@2023#6.4.2",
+            "iso/23894@2023#6.4.3",
+            "iso/23894@2023#6.4.4",
+            "iso/23894@2023#6.5"
+          ]
+        }
+      ],
+      "highest_authority": "international",
+      "presumption": false,
+      "control_count": 1,
+      "passed_count": 1
+    }
+  ],
+  "post_market_measures": [
+    {
+      "id": "oversight-data-governance",
+      "metric": "oversight_data_governance_declared",
+      "article": "10",
+      "standard_clauses": [
+        "iso/iec-5259-2@2024#balance"
+      ]
+    },
+    {
+      "id": "oversight-monitor-interpret",
+      "metric": "oversight_monitor_interpret_declared",
+      "article": "14",
+      "standard_clauses": [
+        "eu/pren-18229-1@2026#human-oversight",
+        "iso/42105@2026#guidance"
+      ]
+    },
+    {
+      "id": "oversight-age-proxy",
+      "metric": "oversight_age_proxy_declared",
+      "article": "15",
+      "standard_clauses": [
+        "eu/pren-18228@2026#6.3"
+      ]
+    }
+  ],
+  "applicable_standards": [
+    "eu/pren-18228@2026",
+    "iso/23894@2023",
+    "eu/ai-act@2024"
+  ],
+  "review_interval": "P6M"
+}
